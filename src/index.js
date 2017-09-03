@@ -1,12 +1,12 @@
+const ping = require('ping')
+const querystring = require('querystring')
+
 let args = process.argv.slice(2)
 
 if (!args[0]) {
     console.error("Usage: node index.js [subscribe_list_base64_encoded]")
     process.exit(1)
 }
-
-const ping = require('ping')
-const querystring = require('querystring')
 
 const base64Decode = (encoded) => {
     return Buffer.from(encoded, 'base64').toString()
@@ -15,22 +15,10 @@ const base64Decode = (encoded) => {
 const pPing = (host) => {
     return new Promise(resolve => {
         ping.promise.probe(host.host).then(result => {
-            let output = `Server ${host.params.remarks} (${result.host} @ ${result.numeric_host}) is `
-
-            if (result.alive) {
-                avgPings.push(result.avg)
-
-                output += `alive, average ping is ${result.avg} ms, max ping is ${result.max} ms.`
-            } else {
-                output += `NOT alive.`
-            }
-
-            console.log(output)
-
             host.alive = result.alive
-            host.min = result.min
-            host.max = result.max
-            host.avg = result.avg
+            host.min = (result.min === "unknown") ? 2147483647 : result.min
+            host.max = (result.max === "unknown") ? 2147483647 : result.max
+            host.avg = (result.avg === "unknown") ? 2147483647 : result.avg
             host.ipaddr = result.numeric_host
 
             resolve(host)
@@ -40,7 +28,6 @@ const pPing = (host) => {
 
 let ssrLinks = base64Decode(args[0]).trim().split("\n")
 let hosts = []
-let avgPings = []
 
 ssrLinks.forEach(link => {
     let serverInfo = base64Decode(link.slice(6)).split(":")
@@ -79,15 +66,26 @@ ssrLinks.forEach(link => {
 let pingPromises = hosts.map(pPing)
 
 Promise.all(pingPromises).then(result => {
-    leastAvgPing = Math.min(...(Object.keys(avgPings).map(key => {
-        return avgPings[key]
-    })))
-
-    result.forEach((host) => {
-        if (host.avg == leastAvgPing) {
-            let output = `\n* Server ${host.params.remarks} (${host.host} @ ${host.ipaddr}) has the least average ping (${host.avg}ms).`
-
-            console.log(output)
-        }
+    serverSorted = result.slice(0)
+    serverSorted.sort((a, b) => {
+        return a.avg - b.avg
     })
+
+    serverSorted.forEach((server, index) => {
+        let output = `[${index + 1}/${serverSorted.length}] Server ${server.params.remarks} (${server.host} @ ${server.ipaddr}) is `
+
+        if (server.alive) {
+            output += `alive, average ping is ${server.avg} ms, max ping is ${server.max} ms.`
+        } else {
+            output += `NOT alive.`
+        }
+
+        console.log(output)
+    })
+
+    leastPingServer = serverSorted[0]
+
+    console.log("")
+
+    console.log(`Server ${leastPingServer.params.remarks} (${leastPingServer.host} @ ${leastPingServer.ipaddr}) has the least average ping (${leastPingServer.avg}ms).`)
 })
