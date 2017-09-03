@@ -1,0 +1,12 @@
+{
+  "dependencies": {
+    "ping": "^0.2.2"
+  },
+  "name": "SSRSubscribe_ping_test",
+  "version": "1.0.0",
+  "description": "This script does a ping test of a SSR subscribe list. Edit",
+  "main": "index.js",
+  "repository": "https://github.com/BirkhoffLee/SSRSubscribe_ping_test",
+  "author": "Birkhoff Lee <github@birkhoff.me>",
+  "license": "MIT"
+}
