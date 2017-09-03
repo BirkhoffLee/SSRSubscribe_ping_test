@@ -8,5 +8,5 @@ It tells you:
 
 # Usage
 ```
-$ node index.js [subscribe_list_base64_encoded]
+$ node src/index.js [subscribe_list_base64_encoded]
 ```
